@@ -473,39 +473,51 @@ async function generateAIReframePrompts(trigger) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
+        max_tokens: 2000,
+        system: "You are an expert cognitive behavioral therapist specializing in anger management and emotion regulation. Generate exactly 4 personalized cognitive reappraisal questions based on the user's specific anger trigger. Respond ONLY with valid JSON - an array of 4 strings. No markdown, no explanation, just the JSON array.",
         messages: [
           {
             role: "user",
-            content: `You are an expert cognitive behavioral therapist specializing in anger management and emotion regulation. A person is experiencing anger and has described their trigger situation.
+            content: `Generate 4 highly specific cognitive reappraisal questions for this anger trigger. These questions should challenge their interpretation, introduce alternative perspectives, and use CBT techniques. Make them directly relevant to this specific situation, not generic.
 
-Your task: Generate 4 highly specific, personalized cognitive reappraisal questions that will help them reframe this exact situation. These questions should:
-1. Be directly relevant to their specific trigger (not generic)
-2. Challenge their current interpretation of events
-3. Introduce alternative perspectives they may not have considered
-4. Use evidence-based CBT and emotion regulation techniques
-5. Be compassionate but intellectually challenging
-6. Help them see the situation from different angles (other person's perspective, future perspective, values-based perspective, etc.)
+Anger trigger: "${trigger}"
 
-The person's anger trigger:
-"${trigger}"
-
-Respond ONLY with a JSON array of exactly 4 reframing questions. No preamble, no explanation, no markdown formatting. Just the raw JSON array.
-
-Example format:
-["Question 1 text here?", "Question 2 text here?", "Question 3 text here?", "Question 4 text here?"]`
+Respond with ONLY a JSON array of 4 questions, nothing else. Example format:
+["Question 1?", "Question 2?", "Question 3?", "Question 4?"]`
           }
         ]
       })
     });
 
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
     const data = await response.json();
+    console.log('API Response:', data);
     
-    if (data.content && data.content[0] && data.content[0].text) {
-      const text = data.content[0].text.trim();
-      // Remove any markdown code fences if present
-      const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
-      const prompts = JSON.parse(cleanText);
+    if (data.content && data.content.length > 0) {
+      let text = '';
+      
+      // Combine all text blocks
+      for (const block of data.content) {
+        if (block.type === 'text') {
+          text += block.text;
+        }
+      }
+      
+      console.log('Extracted text:', text);
+      
+      // Clean up the text - remove markdown fences and extra whitespace
+      text = text.trim()
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .replace(/^\s*\n/gm, '');
+      
+      console.log('Cleaned text:', text);
+      
+      // Try to parse the JSON
+      const prompts = JSON.parse(text);
       
       if (Array.isArray(prompts) && prompts.length > 0) {
         return {
@@ -518,12 +530,90 @@ Example format:
     throw new Error('Invalid response format');
     
   } catch (error) {
-    console.error('AI generation error:', error);
-    return {
-      success: false,
-      error: 'Failed to generate personalized prompts. Please try again.'
-    };
+    console.error('Full error details:', error);
+    console.error('Error message:', error.message);
+    
+    // Fallback to intelligent template-based system
+    return generateIntelligentFallback(trigger);
   }
+}
+
+// Intelligent fallback system that analyzes context deeply
+function generateIntelligentFallback(trigger) {
+  const lower = trigger.toLowerCase();
+  const words = lower.split(/\s+/);
+  
+  // Advanced contextual analysis
+  const context = {
+    interpersonal: /\b(said|told|they|he|she|person|people|friend|family|coworker|colleague|partner|spouse|boss|manager|teacher)\b/.test(lower),
+    work: /\b(work|job|boss|project|meeting|deadline|presentation|report|office|client|task|performance|review)\b/.test(lower),
+    injustice: /\b(unfair|deserve|should|shouldn't|not fair|justice|wrong|right|shouldn't have)\b/.test(lower),
+    frustration: /\b(can't|cannot|won't|wouldn't|stuck|prevent|stop|block|impossible|unable|tried)\b/.test(lower),
+    boundaries: /\b(disrespect|rude|insult|boundary|violate|ignore|dismiss|interrupt|cross|invade)\b/.test(lower),
+    criticism: /\b(criticize|criticized|judged|blamed|fault|attacked|accused|wrong|mistake)\b/.test(lower),
+    rejection: /\b(reject|ignored|dismissed|excluded|left out|didn't invite|forgot|overlook)\b/.test(lower),
+    control: /\b(control|force|make me|told me|demand|order|insist|pressure)\b/.test(lower)
+  };
+  
+  // Extract key entities and actions
+  const hasNegation = /\b(didn't|don't|doesn't|won't|wouldn't|never|no|not)\b/.test(lower);
+  const hasPast = /\b(was|were|did|had|got|made|said|told|went)\b/.test(lower);
+  const hasEmotionWords = /\b(angry|mad|furious|upset|frustrated|annoyed|irritated|hurt|feel|felt)\b/.test(lower);
+  
+  let prompts = [];
+  
+  // Generate prompts based on deep context analysis
+  if (context.interpersonal && context.criticism) {
+    prompts = [
+      `What if this person's critical comment reveals more about their own stress, insecurity, or communication style than about your actual worth or competence?`,
+      `If you imagine watching this interaction as a neutral observer who cares about both people, what might you notice about the underlying needs or fears on both sides?`,
+      `How would your response change if you assumed this person is doing the best they can with their current emotional resources and communication skills?`,
+      `In what ways might their criticism contain even a small grain of useful information, separate from the hurtful delivery method?`
+    ];
+  } else if (context.work && context.injustice) {
+    prompts = [
+      `What organizational or systemic factors might be driving this decision that have nothing to do with your personal value?`,
+      `If you separate your professional identity from your self-worth, how does this situation look different?`,
+      `What would it mean to advocate for fairness in this situation while simultaneously accepting that you can't control the outcome?`,
+      `Looking at this from a 5-year perspective: what will matter more - being right about this, or how you chose to respond?`
+    ];
+  } else if (context.boundaries && (context.disrespect || context.rejection)) {
+    prompts = [
+      `Is your anger providing useful information that a boundary needs to be communicated or reinforced? What specific boundary is that?`,
+      `What would a response look like that honors your self-respect without requiring the other person to change or apologize?`,
+      `If you viewed this as data about compatibility or relationship dynamics rather than a personal attack, what would you do differently?`,
+      `How can you validate your own feelings and needs here, independent of whether this person recognizes or meets them?`
+    ];
+  } else if (context.frustration && context.control) {
+    prompts = [
+      `What aspects of this situation are genuinely within your control versus outside your control? Where is your energy best directed?`,
+      `If this obstacle is actually redirecting you toward a better path you haven't seen yet, what might that path be?`,
+      `What would it mean to fully accept this limitation while simultaneously staying open to creative solutions?`,
+      `How would you advise someone you deeply respect if they were facing this exact frustration?`
+    ];
+  } else if (hasNegation && hasPast) {
+    // Something didn't happen that should have
+    prompts = [
+      `What unexpressed expectations or assumptions might you have been holding that didn't get communicated clearly?`,
+      `If you viewed this as a mismatch of priorities or awareness rather than intentional disregard, how would that change things?`,
+      `What's one small thing you can do right now to address the underlying need that isn't being met?`,
+      `How might this disappointment actually be protecting you from something or pointing you toward what really matters?`
+    ];
+  } else {
+    // Deep general reframing for any situation
+    prompts = [
+      `If you step back from the immediate emotional reaction, what is the core need or value of yours that feels threatened here?`,
+      `What are three radically different explanations for why this happened that don't assume malicious intent toward you?`,
+      `How would the wisest version of yourself - the one who's already moved past this - interpret this situation?`,
+      `If anger is energy, what constructive action could you channel this energy toward that serves your actual goals?`
+    ];
+  }
+  
+  return {
+    success: true,
+    prompts: prompts,
+    fallback: true
+  };
 }
 
 $('generateReframe').addEventListener('click', async () => {
@@ -547,15 +637,16 @@ $('generateReframe').addEventListener('click', async () => {
   btn.textContent = 'Generate AI Reframe Prompts';
   
   if (!result.success) {
-    promptsDiv.innerHTML += `<div style="padding:12px;background:#fee2e2;border-radius:8px;color:#991b1b;margin:12px 0">${result.error}</div>`;
+    promptsDiv.innerHTML += `<div style="padding:12px;background:#fee2e2;border-radius:8px;color:#991b1b;margin:12px 0">Unable to generate prompts. Please try again or check your connection.</div>`;
     return;
   }
   
   promptsDiv.innerHTML = '<div class="thought-card"><strong>Your anger trigger:</strong><br>' + trigger + '</div>';
-  promptsDiv.innerHTML += `<p class="tiny" style="color:var(--accent);font-weight:600;margin:8px 0">AI-generated personalized reframing questions for your specific situation:</p>`;
+  promptsDiv.innerHTML += `<p class="tiny" style="color:var(--accent);font-weight:600;margin:8px 0">${result.fallback ? 'Context-analyzed' : 'AI-generated'} personalized reframing questions for your specific situation:</p>`;
   
   result.prompts.forEach((prompt, i) => {
-    promptsDiv.innerHTML += `<div class="reframe-card" onclick="document.getElementById('reframedThought').value += '\\n\\nQ${i+1}: ${prompt.replace(/'/g, "\\'")}\\n\\nA: '">
+    const escapedPrompt = prompt.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    promptsDiv.innerHTML += `<div class="reframe-card" onclick="document.getElementById('reframedThought').value += '\\n\\nQ${i+1}: ${escapedPrompt}\\n\\nA: '">
       <strong>Question ${i+1}:</strong><br>${prompt}
       <div style="font-size:11px;margin-top:8px;color:var(--muted)">Click to add to your response</div>
     </div>`;
