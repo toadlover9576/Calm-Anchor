@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Calm Anchor</title>
+<style>
+  :root{
+    --bg:#f5f7fa;
+    --card:#ffffff;
+    --muted:#6b7280;
+    --accent:#059669;
+    --accent-2:#10b981;
+    --warm:#f59e0b;
+    --cool:#3b82f6;
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#e5e7eb);color:#1f2937}
+  .wrap{max-width:1100px;margin:20px auto;padding:20px;display:grid;gap:16px;grid-template-columns:1fr 340px;}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr; padding:12px}}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+  .logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;box-shadow:var(--shadow);font-size:22px}
+  h1{margin:0;font-size:24px;color:#111827}
+  p.lead{margin:6px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
+  .card{background:var(--card);border-radius:14px;padding:20px;box-shadow:var(--shadow);}
+  .big{padding:32px}
+  h2{margin:0 0 10px;font-size:18px;color:#111827}
+  .tiny{font-size:13px;color:var(--muted);line-height:1.4}
+  
+  /* Physiological sigh breathing */
+  .breathArea{text-align:center;padding:20px 0}
+  .circle{width:220px;height:220px;border-radius:50%;margin:16px auto;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 40% 30%, rgba(5,150,105,0.15), rgba(5,150,105,0.05));transition:transform 1.2s cubic-bezier(0.4,0,0.2,1);box-shadow:0 8px 24px rgba(5,150,105,0.12);position:relative}
+  .circle::before{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(5,150,105,0.15);opacity:0;transition:opacity 0.3s}
+  .circle.active::before{opacity:1}
+  .circle-label{font-size:24px;color:var(--accent);font-weight:600}
+  
+  /* Cognitive reappraisal */
+  .thought-card{background:#fefce8;border-left:4px solid var(--warm);padding:16px;border-radius:8px;margin:12px 0}
+  .reframe-card{background:#eff6ff;border-left:4px solid var(--cool);padding:16px;border-radius:8px;margin:12px 0}
+  textarea{width:100%;padding:12px;border-radius:10px;border:1px solid #e5e7eb;font-size:14px;font-family:inherit;resize:vertical;min-height:80px}
+  
+  /* Progressive muscle relaxation */
+  .muscle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:16px 0}
+  .muscle-btn{padding:16px 12px;border:2px solid #e5e7eb;background:white;border-radius:10px;cursor:pointer;transition:all 0.3s;font-size:13px;font-weight:500}
+  .muscle-btn:hover{border-color:var(--accent);background:#f0fdf4}
+  .muscle-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
+  
+  /* Attention redirect - gratitude */
+  .gratitude-list{list-style:none;padding:0;margin:16px 0}
+  .gratitude-item{padding:14px;background:#f9fafb;border-radius:8px;margin:8px 0;display:flex;justify-content:space-between;align-items:center}
+  .gratitude-item button{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px 8px}
+  
+  /* Anger thermometer */
+  .thermometer{height:240px;width:48px;background:linear-gradient(to top,#10b981 0%,#f59e0b 50%,#ef4444 100%);border-radius:24px;position:relative;margin:20px auto}
+  .therm-marker{position:absolute;left:50%;transform:translateX(-50%);width:64px;height:4px;background:#1f2937;transition:bottom 0.3s}
+  .therm-labels{display:flex;flex-direction:column-reverse;justify-content:space-between;height:240px;position:absolute;left:60px;top:0;font-size:12px;color:var(--muted)}
+  
+  button,select{border:0;background:var(--accent);color:white;padding:12px 16px;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px;transition:all 0.2s}
+  button:hover{background:var(--accent-2);transform:translateY(-1px)}
+  button:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+  button.secondary{background:white;color:var(--accent);border:2px solid var(--accent)}
+  button.secondary:hover{background:#f0fdf4}
+  .small{font-size:13px;padding:10px 14px}
+  
+  label{display:block;margin-bottom:8px;color:#374151;font-size:14px;font-weight:500}
+  input[type=text],input[type=number]{padding:10px 12px;border-radius:8px;border:1px solid #e5e7eb;font-size:14px;font-family:inherit}
+  
+  .pill{background:#f0fdf4;padding:8px 14px;border-radius:999px;color:var(--accent);font-weight:600;font-size:13px;display:inline-block}
+  .pill.warning{background:#fef3c7;color:#92400e}
+  .pill.danger{background:#fee2e2;color:#991b1b}
+  
+  .progress-ring{transform:rotate(-90deg);width:120px;height:120px}
+  .progress-ring-circle{fill:none;stroke:#e5e7eb;stroke-width:8}
+  .progress-ring-circle.filled{stroke:var(--accent);transition:stroke-dashoffset 0.3s}
+  
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .evidence-badge{background:#eff6ff;border:1px solid #bfdbfe;padding:8px 12px;border-radius:8px;font-size:12px;color:#1e40af;margin:8px 0}
+  
+  .timer-display{font-size:48px;font-weight:700;text-align:center;color:#111827;margin:20px 0}
+  
+  ul.tips{line-height:1.6;color:var(--muted);font-size:14px}
+  ul.tips li{margin:8px 0}
+</style>
+</head>
+<body>
+<main class="wrap" role="main">
+  <section>
+    <header>
+      <div class="logo" aria-hidden="true">CA</div>
+      <div>
+        <h1>Calm Anchor</h1>
+        <p class="lead">Evidence-based emotion regulation toolkit combining physiological calming, cognitive reappraisal, and attention redirection to reduce anger and restore emotional balance.</p>
+      </div>
+    </header>
+
+    <div class="card big" aria-labelledby="sighTitle">
+      <h2 id="sighTitle">🫁 Physiological Sigh (Immediate Relief)</h2>
+      <div class="evidence-badge">✓ Stanford/Huberman Lab research: Most effective breathing pattern for rapid stress reduction</div>
+      <p class="tiny">Double inhale through nose, long exhale through mouth. Proven to rapidly reduce physiological arousal and cortisol levels by activating parasympathetic nervous system.</p>
+
+      <div class="breathArea">
+        <div id="sighCircle" class="circle" aria-live="polite">
+          <div class="circle-label" id="sighLabel">Ready</div>
+        </div>
+
+        <div class="controls">
+          <button id="startSigh" class="small">Start Physiological Sigh</button>
+          <button id="stopSigh" class="small secondary" disabled>Stop</button>
+          <div style="margin-left:12px">
+            <label class="tiny" style="display:inline;margin-right:8px">Cycles:</label>
+            <input id="sighCycles" type="number" min="3" max="15" value="5" style="width:60px" />
+          </div>
+        </div>
+
+        <div style="margin-top:20px;text-align:center">
+          <div class="tiny">Completed: <strong id="sighCount">0</strong> cycles today</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" aria-labelledby="reappraisalTitle">
+      <h2 id="reappraisalTitle">🧠 Cognitive Reappraisal</h2>
+      <div class="evidence-badge">✓ James Gross (Stanford): Most effective emotion regulation strategy long-term</div>
+      <p class="tiny">Reframe the anger-triggering situation. Research shows cognitive reappraisal reduces amygdala activation and increases prefrontal cortex engagement.</p>
+
+      <label>What triggered the anger? (Write it out)</label>
+      <textarea id="triggerThought" placeholder="Example: My coworker dismissed my idea in the meeting..."></textarea>
+
+      <button id="generateReframe" style="margin:12px 0">Generate Reframe Prompts</button>
+
+      <div id="reframePrompts" style="margin-top:16px"></div>
+
+      <div style="margin-top:16px">
+        <label>Your reframed perspective:</label>
+        <textarea id="reframedThought" placeholder="Write your alternative interpretation here..."></textarea>
+        <button id="saveReframe" class="small" style="margin-top:8px">Save Reframe</button>
+      </div>
+    </div>
+
+    <div class="card" aria-labelledby="pmrTitle">
+      <h2 id="pmrTitle">💪 Progressive Muscle Relaxation</h2>
+      <div class="evidence-badge">✓ Jacobson's PMR: Clinically proven to reduce physiological tension and anger</div>
+      <p class="tiny">Tense each muscle group for 5 seconds, then release for 10 seconds. This breaks the anger-tension cycle by inducing deep physical relaxation.</p>
+
+      <div class="muscle-grid" id="muscleGrid">
+        <button class="muscle-btn" data-muscle="jaw">Jaw & Face</button>
+        <button class="muscle-btn" data-muscle="neck">Neck</button>
+        <button class="muscle-btn" data-muscle="shoulders">Shoulders</button>
+        <button class="muscle-btn" data-muscle="arms">Arms</button>
+        <button class="muscle-btn" data-muscle="hands">Hands/Fists</button>
+        <button class="muscle-btn" data-muscle="chest">Chest</button>
+        <button class="muscle-btn" data-muscle="stomach">Stomach</button>
+        <button class="muscle-btn" data-muscle="legs">Legs</button>
+      </div>
+
+      <div style="text-align:center;margin-top:16px">
+        <button id="startPMR" class="small">Start Guided PMR Sequence</button>
+        <button id="stopPMR" class="small secondary" style="margin-left:8px">Stop</button>
+        <div class="tiny" style="margin-top:12px" id="pmrInstruction">Click a muscle group or start full sequence</div>
+      </div>
+    </div>
+
+    <div class="card" aria-labelledby="gratitudeTitle">
+      <h2 id="gratitudeTitle">✨ Attention Redirection: Gratitude Practice</h2>
+      <div class="evidence-badge">✓ Emmons & McCullough: Gratitude practice reduces negative emotions by 35% and shifts attention</div>
+      <p class="tiny">List things you're grateful for RIGHT NOW. This activates the medial prefrontal cortex and reduces amygdala reactivity, shifting focus away from anger triggers.</p>
+
+      <label>Add something you're grateful for today:</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="gratitudeInput" placeholder="Example: Morning coffee, a friend's text, sunshine..." style="flex:1" />
+        <button id="addGratitude" class="small">Add</button>
+      </div>
+
+      <ul class="gratitude-list" id="gratitudeList"></ul>
+    </div>
+
+    <div class="card" aria-labelledby="tipsTitle">
+      <h2 id="tipsTitle">📚 Usage Protocol</h2>
+      <ul class="tips">
+        <li><strong>Immediate anger (0-2 minutes):</strong> Start with 3-5 Physiological Sighs immediately. This is the fastest way to calm the nervous system.</li>
+        <li><strong>After initial calm (2-10 minutes):</strong> Use Cognitive Reappraisal to reframe the situation. Write out the trigger and alternative perspectives.</li>
+        <li><strong>Lingering tension (10-20 minutes):</strong> Do Progressive Muscle Relaxation to release physical anger manifestations.</li>
+        <li><strong>Shift attention completely (ongoing):</strong> Add 3 gratitude items to redirect mental focus to positive stimuli.</li>
+        <li><strong>Best practice:</strong> Use all four techniques in sequence for maximum effectiveness.</li>
+      </ul>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card" aria-labelledby="thermTitle">
+      <h2 id="thermTitle">🌡️ Anger Intensity Tracker</h2>
+      <p class="tiny">Rate your current anger level (0-10):</p>
+      
+      <div style="position:relative;height:240px;margin:20px 0">
+        <div class="thermometer">
+          <div class="therm-marker" id="thermMarker" style="bottom:0"></div>
+        </div>
+        <div class="therm-labels">
+          <span>10 - Rage</span>
+          <span>8</span>
+          <span>6 - Angry</span>
+          <span>4</span>
+          <span>2 - Calm</span>
+          <span>0 - Peace</span>
+        </div>
+      </div>
+
+      <input type="range" id="angerLevel" min="0" max="10" value="5" style="width:100%" />
+      <div style="text-align:center">
+        <div class="pill" id="angerPill">Level: 5</div>
+      </div>
+
+      <div style="margin-top:16px">
+        <button id="logAnger" class="small" style="width:100%">Log Current Level</button>
+      </div>
+
+      <div style="margin-top:16px;font-size:12px;color:var(--muted)">
+        <strong>Trend:</strong>
+        <div id="angerTrend" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px" aria-labelledby="progressTitle">
+      <h2 id="progressTitle">📊 Today's Progress</h2>
+      
+      <div style="text-align:center;margin:20px 0">
+        <svg class="progress-ring">
+          <circle class="progress-ring-circle" cx="60" cy="60" r="52" stroke-width="8"></circle>
+          <circle class="progress-ring-circle filled" id="progressCircle" cx="60" cy="60" r="52" stroke-width="8" stroke-dasharray="326.73" stroke-dashoffset="326.73"></circle>
+        </svg>
+        <div style="margin-top:-80px">
+          <div style="font-size:28px;font-weight:700;color:var(--accent)" id="techniqueCount">0/4</div>
+          <div class="tiny">Techniques Used</div>
+        </div>
+      </div>
+
+      <div style="margin-top:60px">
+        <div class="pill" id="breathPill" style="margin:4px;opacity:0.3">✓ Breathing</div>
+        <div class="pill" id="reappraisalPill" style="margin:4px;opacity:0.3">✓ Reappraisal</div>
+        <div class="pill" id="pmrPill" style="margin:4px;opacity:0.3">✓ PMR</div>
+        <div class="pill" id="gratitudePill" style="margin:4px;opacity:0.3">✓ Gratitude</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px" aria-labelledby="scienceTitle">
+      <h2 id="scienceTitle">🔬 Scientific Basis</h2>
+      <p class="tiny" style="line-height:1.5">
+        <strong>Physiological Sigh:</strong> Huberman Lab, 2023<br>
+        <strong>Cognitive Reappraisal:</strong> Gross & John, 2003<br>
+        <strong>PMR:</strong> Jacobson, 1938; McCallie et al., 2006<br>
+        <strong>Gratitude:</strong> Emmons & McCullough, 2003<br><br>
+        These techniques target different neural pathways: autonomic nervous system, prefrontal cortex reframing, somatic tension release, and attentional shifting.
+      </p>
+    </div>
+
+    <div class="card" style="margin-top:16px" aria-labelledby="historyTitle">
+      <h2 id="historyTitle">📝 Session Log</h2>
+      <div style="font-size:13px;color:var(--muted)">
+        <div id="sessionLog"></div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ===== PHYSIOLOGICAL SIGH ===== */
+let sighRunning = false;
+let sighTimer = null;
+
+function startSigh() {
+  if (sighRunning) return;
+  sighRunning = true;
+  $('startSigh').disabled = true;
+  $('stopSigh').disabled = false;
+  
+  const cycles = parseInt($('sighCycles').value) || 5;
+  let currentCycle = 0;
+  
+  const circle = $('sighCircle');
+  const label = $('sighLabel');
+  
+  function runCycle() {
+    if (!sighRunning || currentCycle >= cycles) {
+      stopSigh();
+      return;
+    }
+    
+    // First inhale
+    label.textContent = 'Inhale (nose)';
+    circle.style.transform = 'scale(1.15)';
+    circle.classList.add('active');
+    
+    setTimeout(() => {
+      if (!sighRunning) return;
+      // Second inhale (sip of air)
+      label.textContent = 'Sip more air';
+      circle.style.transform = 'scale(1.25)';
+    }, 2000);
+    
+    setTimeout(() => {
+      if (!sighRunning) return;
+      // Long exhale
+      label.textContent = 'Exhale slowly (mouth)';
+      circle.style.transform = 'scale(0.85)';
+    }, 3000);
+    
+    setTimeout(() => {
+      if (!sighRunning) return;
+      currentCycle++;
+      label.textContent = `Rest (${currentCycle}/${cycles})`;
+      circle.style.transform = 'scale(1)';
+      
+      setTimeout(() => {
+        if (sighRunning) runCycle();
+      }, 2000);
+    }, 8000);
+  }
+  
+  runCycle();
+  logSession('Started Physiological Sigh breathing');
+  markTechniqueUsed('breath');
+}
+
+function stopSigh() {
+  sighRunning = false;
+  $('startSigh').disabled = false;
+  $('stopSigh').disabled = true;
+  $('sighLabel').textContent = 'Complete';
+  $('sighCircle').style.transform = 'scale(1)';
+  $('sighCircle').classList.remove('active');
+  clearTimeout(sighTimer);
+  
+  const count = parseInt(localStorage.getItem('sighCount') || '0') + 1;
+  localStorage.setItem('sighCount', count);
+  $('sighCount').textContent = count;
+  
+  setTimeout(() => {
+    $('sighLabel').textContent = 'Ready';
+  }, 2000);
+}
+
+$('startSigh').addEventListener('click', startSigh);
+$('stopSigh').addEventListener('click', stopSigh);
+
+/* ===== COGNITIVE REAPPRAISAL ===== */
+const reframeTemplates = [
+  "What if this person is going through something difficult I don't know about?",
+  "How might I view this differently if I assumed positive intent?",
+  "What could I learn from this situation?",
+  "Will this matter in a week? A month? A year?",
+  "What would I tell a friend who experienced this?",
+  "Is there another explanation for their behavior?",
+  "What part of this can I control, and what must I accept?"
+];
+
+$('generateReframe').addEventListener('click', () => {
+  const trigger = $('triggerThought').value.trim();
+  if (!trigger) {
+    alert('Please describe what triggered your anger first.');
+    return;
+  }
+  
+  const promptsDiv = $('reframePrompts');
+  promptsDiv.innerHTML = '<div class="thought-card"><strong>Original thought:</strong><br>' + trigger + '</div>';
+  
+  const shuffled = reframeTemplates.sort(() => Math.random() - 0.5).slice(0, 3);
+  shuffled.forEach(template => {
+    promptsDiv.innerHTML += '<div class="reframe-card">💭 ' + template + '</div>';
+  });
+  
+  logSession('Generated cognitive reappraisal prompts');
+});
+
+$('saveReframe').addEventListener('click', () => {
+  const reframe = $('reframedThought').value.trim();
+  if (!reframe) {
+    alert('Please write your reframed perspective first.');
+    return;
+  }
+  
+  logSession('Saved cognitive reappraisal: ' + reframe.substring(0, 50) + '...');
+  markTechniqueUsed('reappraisal');
+  
+  alert('Reframe saved! Notice how your emotion shifted.');
+  $('triggerThought').value = '';
+  $('reframedThought').value = '';
+  $('reframePrompts').innerHTML = '';
+});
+
+/* ===== PROGRESSIVE MUSCLE RELAXATION ===== */
+let pmrRunning = false;
+let pmrTimer = null;
+const muscles = ['jaw', 'neck', 'shoulders', 'arms', 'hands', 'chest', 'stomach', 'legs'];
+let currentMuscleIndex = 0;
+
+document.querySelectorAll('.muscle-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const muscle = e.target.dataset.muscle;
+    if (pmrRunning) return;
+    
+    e.target.classList.add('active');
+    $('pmrInstruction').textContent = `Tense your ${muscle} for 5 seconds...`;
+    
+    setTimeout(() => {
+      $('pmrInstruction').textContent = `Release and relax your ${muscle} for 10 seconds...`;
+    }, 5000);
+    
+    setTimeout(() => {
+      e.target.classList.remove('active');
+      $('pmrInstruction').textContent = 'Complete! Click another muscle or start full sequence.';
+    }, 15000);
+  });
+});
+
+$('startPMR').addEventListener('click', () => {
+  if (pmrRunning) return;
+  pmrRunning = true;
+  currentMuscleIndex = 0;
+  $('startPMR').disabled = true;
+  
+  function runMuscle() {
+    if (currentMuscleIndex >= muscles.length) {
+      pmrRunning = false;
+      $('startPMR').disabled = false;
+      $('pmrInstruction').textContent = 'Full sequence complete! Notice the relaxation.';
+      document.querySelectorAll('.muscle-btn').forEach(b => b.classList.remove('active'));
+      logSession('Completed full PMR sequence');
+      markTechniqueUsed('pmr');
+      return;
+    }
+    
+    const muscle = muscles[currentMuscleIndex];
+    const btn = document.querySelector(`[data-muscle="${muscle}"]`);
+    btn.classList.add('active');
+    
+    $('pmrInstruction').textContent = `Tense your ${muscle} (5 seconds)`;
+    
+    setTimeout(() => {
+      $('pmrInstruction').textContent = `Release ${muscle} - feel the relaxation (10 seconds)`;
+    }, 5000);
+    
+    setTimeout(() => {
+      btn.classList.remove('active');
+      currentMuscleIndex++;
+      runMuscle();
+    }, 15000);
+  }
+  
+  runMuscle();
+  logSession('Started PMR sequence');
+});
+
+$('stopPMR').addEventListener('click', () => {
+  pmrRunning = false;
+  $('startPMR').disabled = false;
+  document.querySelectorAll('.muscle-btn').forEach(b => b.classList.remove('active'));
+  $('pmrInstruction').textContent = 'Stopped. Click to restart.';
+  clearTimeout(pmrTimer);
+});
+
+/* ===== GRATITUDE PRACTICE ===== */
+$('addGratitude').addEventListener('click', () => {
+  const text = $('gratitudeInput').value.trim();
+  if (!text) return;
+  
+  const item = document.createElement('div');
+  item.className = 'gratitude-item';
+  item.innerHTML = `
+    <span>✓ ${text}</span>
+    <button onclick="this.parentElement.remove()">×</button>
+  `;
+  $('gratitudeList').prepend(item);
+  $('gratitudeInput').value = '';
+  
+  logSession('Added gratitude: ' + text);
+  markTechniqueUsed('gratitude');
+  
+  // Save to storage
+  const gratitudes = JSON.parse(localStorage.getItem('gratitudes') || '[]');
+  gratitudes.unshift({ text, date: new Date().toISOString() });
+  localStorage.setItem('gratitudes', JSON.stringify(gratitudes.slice(0, 20)));
+});
+
+$('gratitudeInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') $('addGratitude').click();
+});
+
+/* ===== ANGER THERMOMETER ===== */
+$('angerLevel').addEventListener('input', (e) => {
+  const level = parseInt(e.target.value);
+  const percent = (level / 10) * 100;
+  $('thermMarker').style.bottom = (percent * 2.4) + 'px';
+  
+  let pill = $('angerPill');
+  pill.textContent = `Level: ${level}`;
+  pill.className = 'pill';
+  if (level >= 7) pill.className = 'pill danger';
+  else if (level >= 4) pill.className = 'pill warning';
+});
+
+$('logAnger').addEventListener('click', () => {
+  const level = parseInt($('angerLevel').value);
+  const logs = JSON.parse(localStorage.getItem('angerLogs') || '[]');
+  logs.push({ level, time: new Date().toISOString() });
+  localStorage.setItem('angerLogs', JSON.stringify(logs.slice(-20)));
+  
+  updateAngerTrend();
+  logSession(`Logged anger level: ${level}/10`);
+});
+
+function updateAngerTrend() {
+  const logs = JSON.parse(localStorage.getItem('angerLogs') || '[]');
+  if (logs.length < 2) {
+    $('angerTrend').textContent = 'Log more data to see trends';
+    return;
+  }
+  
+  const recent = logs.slice(-5).map(l => l.level);
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  const trend = recent[recent.length - 1] < recent[0] ? '↓ Decreasing' : 
+                recent[recent.length - 1] > recent[0] ? '↑ Increasing' : '→ Stable';
+  
+  $('angerTrend').innerHTML = `${trend} (avg: ${avg.toFixed(1)})`;
+}
+
+/* ===== PROGRESS TRACKING ===== */
+function markTechniqueUsed(technique) {
+  const used = JSON.parse(localStorage.getItem('techniquesUsed') || '{}');
+  const today = new Date().toDateString();
+  
+  if (!used[today]) used[today] = [];
+  if (!used[today].includes(technique)) {
+    used[today].push(technique);
+    localStorage.setItem('techniquesUsed', JSON.stringify(used));
+  }
+  
+  updateProgress();
+}
+
+function updateProgress() {
+  const used = JSON.parse(localStorage.getItem('techniquesUsed') || '{}');
+  const today = new Date().toDateString();
+  const todayTechs = used[today] || [];
+  
+  const count = todayTechs.length;
+  $('techniqueCount').textContent = `${count}/4`;
+  
+  const circumference = 326.73;
+  const offset = circumference - (count / 4) * circumference;
+  $('progressCircle').style.strokeDashoffset = offset;
+  
+  // Update pills
+  ['breath', 'reappraisal', 'pmr', 'gratitude'].forEach(tech => {
+    const pill = $(`${tech}Pill`);
+    if (todayTechs.includes(tech)) {
+      pill.style.opacity = '1';
+    } else {
+      pill.style.opacity = '0.3';
+    }
+  });
+}
+
+/* ===== SESSION LOGGING ===== */
+function logSession(message) {
+  const log = $('sessionLog');
+  const time = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.style.marginBottom = '8px';
+  entry.innerHTML = `<strong>${time}</strong> - ${message}`;
+  log.prepend(entry);
+  
+  // Keep only last 15 entries
+  while (log.children.length > 15) {
+    log.removeChild(log.lastChild);
+  }
+}
+
+/* ===== INITIALIZATION ===== */
+(function init() {
+  // Load gratitudes
+  const gratitudes = JSON.parse(localStorage.getItem('gratitudes') || '[]');
+  gratitudes.slice(0, 8).forEach(g => {
+    const item = document.createElement('div');
+    item.className = 'gratitude-item';
+    item.innerHTML = `
+      <span>✓ ${g.text}</span>
+      <button onclick="this.parentElement.remove()">×</button>
+    `;
+    $('gratitudeList').appendChild(item);
+  });
+  
+  // Load sigh count
+  const sighCount = parseInt(localStorage.getItem('sighCount') || '0');
+  $('sighCount').textContent = sighCount;
+  
+  // Update progress
+  updateProgress();
+  updateAngerTrend();
+  
+  // Welcome message
+  logSession('Welcome to Calm Anchor - Your evidence-based emotion regulation toolkit');
+  
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'b' && !e.target.matches('input, textarea')) {
+      e.preventDefault();
+      $('startSigh').click();
+    }
+    if (e.key === 'r' && !e.target.matches('input, textarea')) {
+      e.preventDefault();
+      $('generateReframe').focus();
+    }
+    if (e.key === 'p' && !e.target.matches('input, textarea')) {
+      e.preventDefault();
+      $('startPMR').click();
+    }
+    if (e.key === 'g' && !e.target.matches('input, textarea')) {
+      e.preventDefault();
+      $('gratitudeInput').focus();
+    }
+  });
+  
+  // Auto-suggest if anger level is high
+  $('angerLevel').addEventListener('change', (e) => {
+    const level = parseInt(e.target.value);
+    if (level >= 7) {
+      setTimeout(() => {
+        if (confirm('High anger detected. Would you like to start the Physiological Sigh immediately?')) {
+          startSigh();
+        }
+      }, 500);
+    }
+  });
+  
+  // Clear old data daily
+  const lastClear = localStorage.getItem('lastClear');
+  const today = new Date().toDateString();
+  if (lastClear !== today) {
+    // Reset daily counters but keep techniques log for trend analysis
+    localStorage.setItem('sighCount', '0');
+    localStorage.setItem('lastClear', today);
+  }
+})();
+
+// Educational tooltips on hover
+const tooltips = {
+  sighTitle: "The physiological sigh is the fastest breathing technique for calming the nervous system. Research by Dr. Andrew Huberman shows it's more effective than meditation or other breathing patterns for acute stress.",
+  reappraisalTitle: "Cognitive reappraisal changes how you think about a situation BEFORE the full emotional response develops. It's like changing the channel in your brain.",
+  pmrTitle: "Anger creates muscle tension. PMR reverses this by systematically relaxing muscle groups, breaking the mind-body anger cycle.",
+  gratitudeTitle: "Gratitude practice literally rewires your brain to notice positive stimuli, making it harder to maintain anger. It's attention hijacking for good.",
+  thermTitle: "Tracking your anger helps you notice patterns and see progress. Self-monitoring is a proven psychological intervention."
+};
+
+// Add aria-labels for accessibility
+Object.keys(tooltips).forEach(key => {
+  const el = $(key);
+  if (el) {
+    el.setAttribute('title', tooltips[key]);
+    el.style.cursor = 'help';
+  }
+});
+
+// Sound effects for completion (optional)
+function playSuccessChime() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.frequency.value = 523.25; // C5
+    gainNode.gain.value = 0.1;
+    
+    oscillator.start();
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    oscillator.stop(audioCtx.currentTime + 0.3);
+  } catch (e) {
+    // Audio not available, silent fail
+  }
+}
+
+// Export data option
+function exportProgress() {
+  const data = {
+    angerLogs: JSON.parse(localStorage.getItem('angerLogs') || '[]'),
+    techniquesUsed: JSON.parse(localStorage.getItem('techniquesUsed') || '{}'),
+    gratitudes: JSON.parse(localStorage.getItem('gratitudes') || '[]'),
+    sighCount: localStorage.getItem('sighCount'),
+    exportDate: new Date().toISOString()
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'calm-anchor-progress.json';
+  a.click();
+}
+
+// Integration suggestion for therapists
+console.log('%cCalm Anchor - Evidence-Based Emotion Regulation', 'font-size:16px;font-weight:bold;color:#059669');
+console.log('%cThis tool combines:', 'font-size:14px;color:#6b7280');
+console.log('• Physiological Sigh (Huberman Lab, Stanford)');
+console.log('• Cognitive Reappraisal (Gross & John, 2003)');
+console.log('• Progressive Muscle Relaxation (Jacobson, 1938)');
+console.log('• Gratitude Practice (Emmons & McCullough, 2003)');
+console.log('%cFor clinical use, combine with professional therapy.', 'font-size:12px;font-style:italic;color:#9ca3af');
